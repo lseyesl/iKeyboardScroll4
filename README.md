@@ -8,7 +8,7 @@ iScroll4下，当表单元素聚焦且键盘出现时，可能会出现iScroll�
 
 [注意]
 ----------------------
-本方案基于Zepto.js及Sea.js构建，使用需请注意；
+本方案基于Zepto.js及Sea.js构建，使用时需注意
 http://www.zawaliang.com/2013/10/443.html
 
 [使用]
