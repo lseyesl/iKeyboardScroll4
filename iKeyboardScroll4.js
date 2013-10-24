@@ -1,5 +1,5 @@
 /**
- * iKeyvoardScroll beta
+ * iKeyboardScroll4 beta
  * 2013, zawa, www.zawaliang.com
  * Licensed under the MIT license.
  */
