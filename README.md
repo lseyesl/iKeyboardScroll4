@@ -1,4 +1,4 @@
-iKeyboardScroll4 beta
+iKeyboardScroll4 v0.0.1
 ===========
 
 
@@ -15,10 +15,14 @@ http://www.zawaliang.com/2013/10/443.html
 ----------------------
 ```
 var Keyboard = require('iKeyboardScroll4');
+
+// 为元素添加监控，适用于新增的元素
+1) Keyboard.watch(selector);
+
 // 键盘显隐时
-1) Keyboard.onchange(display, activeElement);
+2) Keyboard.onchange(display, activeElement);
 
 // 传入iScroll实例，自动处理refresh以及聚焦元素的位置问题
-2) Keyboard.fixIScroll4Onchange(iScrollInstance, offset);
+3) Keyboard.fixIScroll4Onchange(iScrollInstance, offset);
 
 ```
