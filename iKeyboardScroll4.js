@@ -1,6 +1,7 @@
 /**
- * 检测键盘状态
- * @author: zawaliang
+ * iKeyboardScroll4 v0.0.1
+ * 2013, zawa, www.zawaliang.com
+ * Licensed under the MIT license.
  */
 
 define(function(require, exports, module) {
