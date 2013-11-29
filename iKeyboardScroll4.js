@@ -3,21 +3,22 @@
  * 2013, zawa, www.zawaliang.com
  * Licensed under the MIT license.
  */
-
 define(function(require, exports, module) {
-    var _initWinWidth = $(window).width(),
-        _initWinHeight = $(window).height(),
+    var _initWinWidth = $(window).width(), // 窗口初始宽度
+        _initWinHeight = $(window).height(), // 窗口初始高度
         _landscape = !!(window.orientation & 2), // http://www.codecouch.com/2011/11/detecting-orientation-changes-in-mobile-safari-on-ios-and-other-supported-browsers/
         _landscape2 = _landscape,
         _activeElement = null,
         _display = false,
         _ios7 = $.os.ios && parseFloat($.os.version) >= 7,
-        _callback = [];
+        _callback = [],
+        _timer = null;
 
 
     function watch(selector) {
         $(selector).each(function(k, v) {
             if ($(v).attr('data-keyboard-init') != 1) {
+                // 事件代理的方式可能被阻止冒泡,这里使用直接绑定
                 // iOS7下focus(或者click)可能存在聚焦失败的情况，这里统一使用tap
                 $(v).on('tap', function(e) {
                     _activeElement = this;
@@ -37,37 +38,53 @@ define(function(require, exports, module) {
         }
     }
 
+    function detect() {
+        // 不等表示翻屏
+        if (_landscape != _landscape2) {
+            // 屏幕翻转且翻转前键盘处于显示状态时,交换宽高
+            if (_display) {
+                var tmpWidth = _initWinWidth;
+                _initWinWidth = _initWinHeight;
+                _initWinHeight = tmpWidth;
+            } else {
+                _initWinWidth = $(window).width();
+                _initWinHeight = $(window).height();
+            }
+        }
 
-    // 获取聚焦元素, 事件代理的方式可能被阻止冒泡,这里使用直接绑定
+        var h = $(window).height();
+        _display = _activeElement !== null && _initWinHeight > h;
+
+        $.each(_callback, function(k, v) {
+            v.apply(null, [_display, _activeElement]);
+        });
+        _landscape = _landscape2;
+    }
+
+
+    // 监控聚焦元素
     watch('input,textarea');
 
-
+    // 绑定
     $(window).on('orientationchange', function(e) {
         _landscape2 = !!(window.orientation & 2);
+
+        // ios下可以直接取宽高，且ios下onresize似乎比orientationchange先触发，因此setTimeout的时机不好掌控
+        $.os.ios && detect();
     }).on('resize', function(e) {
-        // 不确定orientationchange与onresize哪个先触发,这里稍微延时
-        setTimeout(function() {
-            // Android下orientationchange之后获取window值会延时
-            if (_landscape != _landscape2) {
-                // 屏幕翻转且翻转前键盘处于显示状态时,交换宽高
-                if (_display) {
-                    var tmpWidth = _initWinWidth;
-                    _initWinWidth = _initWinHeight;
-                    _initWinHeight = tmpWidth;
-                } else {
-                    _initWinWidth = $(window).width();
-                    _initWinHeight = $(window).height();
-                }
-            }
+        // ios下onresize似乎比orientationchange先触发，因此setTimeout的时机不好掌控
+        // 对于ios，翻屏时统一通过orientationchange进行处理,非翻屏时统一使用onresize
+        // ios下，onresize后若宽度不相同证明翻屏了，此时使用orientationchange来进行处理
+        // Android不变，使用onresize处理
+        if ($.os.ios 
+            && (_landscape != _landscape2 // 此判断是为了防止orientationchange先于onresize触发
+                || $(window).width() != _initWinWidth)) {
+            return;
+        }
 
-            var h = $(window).height();
-            _display = _activeElement !== null && _initWinHeight > h;
-
-            $.each(_callback, function(k, v) {
-                v.apply(null, [_display, _activeElement]);
-            });
-            _landscape = _landscape2;
-        }, 200);
+        _timer && clearTimeout(_timer);
+        // Android下orientationchange之后获取window值会延时
+        _timer = setTimeout(detect, 200);
     });
     
 
