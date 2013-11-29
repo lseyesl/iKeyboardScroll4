@@ -1,7 +1,6 @@
 /**
- * iKeyboardScroll4 beta
- * 2013, zawa, www.zawaliang.com
- * Licensed under the MIT license.
+ * 检测键盘状态
+ * @author: zawaliang
  */
 
 define(function(require, exports, module) {
@@ -15,25 +14,31 @@ define(function(require, exports, module) {
         _callback = [];
 
 
-    // 获取聚焦元素
-    $(document.body).on('tap', function(e) {
-        var target = $(e.target),
-            nodeName = e.target.nodeName.toLowerCase();
+    function watch(selector) {
+        $(selector).each(function(k, v) {
+            if ($(v).attr('data-keyboard-init') != 1) {
+                // iOS7下focus(或者click)可能存在聚焦失败的情况，这里统一使用tap
+                $(v).on('tap', function(e) {
+                    _activeElement = this;
 
-        if ($.inArray(nodeName, ['input', 'textarea']) != -1 && !target.attr('data-onkeyboard-inited')) {
-            target.on('focus', function(e) {
-                _activeElement = e.target;
-            }).on('blur', function(e) {
-                _activeElement = null;
-            }).attr('data-onkeyboard-inited', 1);
-            _activeElement = e.target;
-        }
+                    // iOS7不触发focus,这里手动触发; 这里的focus不可去掉,否则fixIScroll4Onchange里的focus可能存在不生效的情况
+                    _ios7 && this.focus();
+                }).on('blur', function(e) {
+                    _activeElement = null;
+                }).attr('data-keyboard-init', 1);
+            }
+        });
+    }
 
-        // TODO： iOS7不触发focus,这里手动触发; 这里的focus不可去掉,否则fixIScroll4Onchange里的focus可能存在不生效的情况
-        if (_ios7 && $.inArray(nodeName, ['input', 'textarea']) != -1) {
-            target.focus();
+    function pushCallback(callback) {
+        if ($.type(callback) == 'function') {
+            _callback.push(callback);
         }
-    });
+    }
+
+
+    // 获取聚焦元素, 事件代理的方式可能被阻止冒泡,这里使用直接绑定
+    watch('input,textarea');
 
 
     $(window).on('orientationchange', function(e) {
@@ -65,13 +70,12 @@ define(function(require, exports, module) {
     });
     
 
-    function pushCallback(callback) {
-        if ($.type(callback) == 'function') {
-            _callback.push(callback);
-        }
-    }
-
     return {
+        /**
+         * 为元素添加监控，适用于新增的元素
+         * @param {String|Object} selector
+         */
+        watch: watch,
         /**
          * 绑定键盘显隐回调, 会在窗口尺寸变化时触发
          * @param {Function} callback(display, focusElement) display为true时表单键盘显示; focusElement聚焦元素
@@ -93,7 +97,7 @@ define(function(require, exports, module) {
                 // 聚焦且键盘显示时,修正输入框位置
                 // iOS6会自动定位到输入框,但还是需要refresh位置
                 // iOS7不会自动定位到输入框,表现跟Android类似
-                if ((!$.os.ios || ($.os.ios && parseFloat($.os.version) >= 7)) 
+                if ((!$.os.ios || _ios7) 
                     && display && focusElement) {
                     offset = $.type(offset) == 'number' ? offset : 5;
 
