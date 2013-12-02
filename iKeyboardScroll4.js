@@ -1,8 +1,11 @@
 /**
  * iKeyboardScroll4 v0.0.1
  * 2013, zawa, www.zawaliang.com
- * Licensed under the MIT license.
+ * Licensed under the MIT license
+ * 
+ * iOS7下由于受iScroll影响，造成输入框focus聚焦失败； iOS5.x 6.x没这个问题; 具体原因待研究
  */
+
 define(function(require, exports, module) {
     var _initWinWidth = $(window).width(), // 窗口初始宽度
         _initWinHeight = $(window).height(), // 窗口初始高度
@@ -17,10 +20,15 @@ define(function(require, exports, module) {
 
     function watch(selector) {
         $(selector).each(function(k, v) {
+            // 事件代理的方式可能被阻止冒泡,这里使用直接绑定
             if ($(v).attr('data-keyboard-init') != 1) {
-                // 事件代理的方式可能被阻止冒泡,这里使用直接绑定
-                // iOS7下focus(或者click)可能存在聚焦失败的情况，这里统一使用tap
-                $(v).on('tap', function(e) {
+                if (_ios7) {
+                    $(v).tap(function(e) {
+                        this.focus();
+                    });    
+                }
+
+                $(v).on('focus', function(e) {
                     _activeElement = this;
 
                     // iOS7不触发focus,这里手动触发; 这里的focus不可去掉,否则fixIScroll4Onchange里的focus可能存在不生效的情况
@@ -70,13 +78,13 @@ define(function(require, exports, module) {
         _landscape2 = !!(window.orientation & 2);
 
         // ios下可以直接取宽高，且ios下onresize似乎比orientationchange先触发，因此setTimeout的时机不好掌控
-        $.os.ios && detect();
+        _ios7 && detect();
     }).on('resize', function(e) {
-        // ios下onresize似乎比orientationchange先触发，因此setTimeout的时机不好掌控
-        // 对于ios，翻屏时统一通过orientationchange进行处理,非翻屏时统一使用onresize
-        // ios下，onresize后若宽度不相同证明翻屏了，此时使用orientationchange来进行处理
-        // Android不变，使用onresize处理
-        if ($.os.ios 
+        // ios下onresize似乎比orientationchange先触发,因此setTimeout的时机不好掌控
+        // 对于ios,翻屏时统一通过orientationchange进行处理,非翻屏时统一使用onresize
+        // ios下,onresize后若宽度不相同证明翻屏了,此时使用orientationchange来进行处理
+        // Android不变,使用onresize处理
+        if (_ios7 
             && (_landscape != _landscape2 // 此判断是为了防止orientationchange先于onresize触发
                 || $(window).width() != _initWinWidth)) {
             return;
