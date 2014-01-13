@@ -71,7 +71,7 @@ define(function(require, exports, module) {
 
 
     // 监控聚焦元素
-    watch('input,textarea');
+    watch('input,textarea,select');
 
     // 绑定
     $(window).on('orientationchange', function(e) {
